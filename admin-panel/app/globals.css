@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 2, 6, 23;
+  --background-end-rgb: 15, 23, 42;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  min-height: 100vh;
+}
+
+.admin-card {
+  @apply bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl;
+}
+
+.table-row {
+  @apply border-b border-slate-800 hover:bg-slate-800/50 transition-colors;
+}
+
+.btn-admin {
+  @apply bg-violet-600 hover:bg-violet-700 text-white font-bold py-2 px-6 rounded-xl transition-all active:scale-95;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #ffffff10;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #ffffff20;
+}
