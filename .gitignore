@@ -1,11 +1,57 @@
+# Dependency Directories
 node_modules/
-.env
-.env.local
+jspm_packages/
+
+# Build Directories
 .next/
 out/
+build/
 dist/
-uploads/
+.cache/
+.parcel-cache/
+.turbo/
+
+# Mobile App & Flutter
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+android/app/src/main/res/
+ios/Runner/Assets.xcassets/
+*.apk
+*.aab
+*.ipa
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.production
+.env.production.local
+.env.test.local
+.env.*.local
+*.pem
+*.key
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 *.log
-android/
-ios/
+error.log
+combined.log
+
+# Operating System Files
 .DS_Store
+Thumbs.db
+
+# IDE Folders
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project Specific
+uploads/
+temp/
+/tmp/
