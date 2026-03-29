@@ -7,7 +7,8 @@ const {
   getConfig, 
   updateConfig, 
   getAllTransactions, 
-  reviewTransaction 
+  reviewTransaction,
+  updateUserBalance
 } = require('../controllers/adminController');
 const { protect } = require('../middleware/authMiddleware');
 
