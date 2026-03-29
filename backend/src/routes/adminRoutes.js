@@ -10,17 +10,17 @@ const {
   reviewTransaction,
   updateUserBalance
 } = require('../controllers/adminController');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, admin } = require('../middleware/authMiddleware');
 
-router.get('/analytics', getAnalytics);
-router.get('/users', getAllUsers);
-router.put('/user/:id/block', toggleUserBlock);
-router.put('/user/:id/balance', updateUserBalance);
-router.get('/config', getConfig);
-router.put('/config', updateConfig);
+router.get('/analytics', protect, admin, getAnalytics);
+router.get('/users', protect, admin, getAllUsers);
+router.put('/user/:id/block', protect, admin, toggleUserBlock);
+router.put('/user/:id/balance', protect, admin, updateUserBalance);
+router.get('/config', protect, admin, getConfig);
+router.put('/config', protect, admin, updateConfig);
 
 // Transaction Monitoring
-router.get('/transactions', getAllTransactions);
-router.post('/transactions/:id/:action', reviewTransaction);
+router.get('/transactions', protect, admin, getAllTransactions);
+router.post('/transactions/:id/:action', protect, admin, reviewTransaction);
 
 module.exports = router;

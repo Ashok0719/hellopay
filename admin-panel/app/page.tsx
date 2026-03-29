@@ -404,7 +404,7 @@ function MonitoringView({ searchQuery }: { searchQuery: string }) {
                       <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full ${tx.status === 'PENDING' ? 'bg-indigo-600/10 text-indigo-500 border border-indigo-500/10' : tx.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/10' : 'bg-red-500/10 text-red-500 border border-red-500/10'}`}>{tx.status}</span>
                    </div>
                    {tx.receiptUrl && (
-                     <a href={`http://localhost:5000${tx.receiptUrl}`} target="_blank" className="mt-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:text-white transition-colors">
+                     <a href={`${(typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) ? 'http://localhost:5000' : 'https://api.hellopayapp.com'}${tx.receiptUrl}`} target="_blank" className="mt-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:text-white transition-colors">
                         <Monitor size={12} /> View Receipt Evidence
                      </a>
                    )}
