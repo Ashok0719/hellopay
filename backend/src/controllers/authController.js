@@ -28,7 +28,7 @@ const sendOtp = async (req, res) => {
 // @route   POST /api/auth/verify-otp
 // @access  Public
 const verifyOtp = async (req, res) => {
-  const { phone, otp, name, referralCode } = req.body;
+  const { phone, otp, name, email, pincode, referralCode } = req.body;
 
   const storedOtp = otpStore.get(phone);
 
@@ -58,7 +58,9 @@ const verifyOtp = async (req, res) => {
 
     user = await User.create({
       name,
+      email,
       phone,
+      pincode,
       isOtpVerified: true,
       referralCode: newReferralCode,
       referredBy,

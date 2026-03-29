@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { User, Phone, Mail, Lock, ArrowRight, Zap, Fingerprint } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { User, Phone, Mail, Lock, ArrowRight, Zap, Fingerprint, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/hooks/useAuth';
 
 export default function RegisterPage() {
+  const [step, setStep] = useState(1); // 1: Info, 2: OTP
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -16,148 +17,222 @@ export default function RegisterPage() {
     password: '',
     pincode: '',
     referral: '',
+    otp: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
   const { setToken, setUser } = useAuthStore();
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.phone || !formData.name) {
+      setError('Name and Phone are required for Neural Link');
+      return;
+    }
+    
+    setLoading(true);
+    setError('');
+    try {
+      await api.post('/auth/send-otp', { phone: formData.phone });
+      setStep(2);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to send OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const { data } = await api.post('/auth/register', formData);
+      const { data } = await api.post('/auth/verify-otp', {
+        phone: formData.phone,
+        otp: formData.otp,
+        name: formData.name,
+        email: formData.email,
+        pincode: formData.pincode,
+        referralCode: formData.referral
+      });
       setToken(data.token);
       setUser(data);
       router.push('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.message || 'Neural synchronization failed');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center py-20 px-6">
+    <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center py-20 px-6">
       <Link href="/" className="flex items-center gap-2 mb-12">
-        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
+        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
           <Zap className="text-white fill-white" size={24} />
         </div>
-        <span className="text-2xl font-bold tracking-tight text-white">HelloPay</span>
+        <span className="text-2xl font-black tracking-tighter text-white italic">HelloPay</span>
       </Link>
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-lg p-10 rounded-[40px] bg-slate-900 border border-slate-800 shadow-2xl"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-lg p-10 rounded-[48px] bg-[#030712] border border-white/5 shadow-2xl relative overflow-hidden"
       >
-        <h2 className="text-4xl font-black mb-2 tracking-tight">Create Account</h2>
-        <p className="text-slate-500 mb-10 leading-relaxed font-medium">Join the next evolution of finance today.</p>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-[80px] rounded-full -translate-y-1/2 translate-x-1/2" />
+        
+        <h2 className="text-4xl font-black mb-2 tracking-tight">Neural Link</h2>
+        <p className="text-slate-500 mb-10 leading-relaxed font-medium">
+          {step === 1 ? 'Enter your details to initialize account.' : 'Confirm identity with the verification code.'}
+        </p>
 
-        {error && <div className="p-5 mb-8 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-bold">{error}</div>}
+        {error && <div className="p-5 mb-8 rounded-3xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-bold">{error}</div>}
 
-        <form onSubmit={handleRegister} className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-500 uppercase tracking-widest">Full Name</label>
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
-                <input
-                  type="text"
-                  placeholder="John Doe"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-indigo-500/50 transition-all font-bold text-white placeholder:text-slate-700 shadow-inner"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
+        <AnimatePresence mode="wait">
+          {step === 1 ? (
+            <motion.form
+              key="step1"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              onSubmit={handleSendOtp}
+              className="space-y-6"
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Display Name</label>
+                  <div className="relative">
+                    <User className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
+                    <input
+                      required
+                      type="text"
+                      placeholder="Neural Node ID"
+                      className="w-full bg-[#020617]/50 border border-white/5 rounded-[24px] py-5 pl-14 pr-6 outline-none focus:border-blue-500/40 transition-all font-bold text-white placeholder:text-slate-700"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Neural Phone</label>
+                  <div className="relative">
+                    <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
+                    <input
+                      required
+                      type="text"
+                      placeholder="10-Digit Link"
+                      className="w-full bg-[#020617]/50 border border-white/5 rounded-[24px] py-5 pl-14 pr-6 outline-none focus:border-blue-500/40 transition-all font-bold text-white placeholder:text-slate-700"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-500 uppercase tracking-widest">Phone</label>
-              <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
-                <input
-                  type="text"
-                  placeholder="9876543210"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-indigo-500/50 transition-all font-bold text-white placeholder:text-slate-700 shadow-inner"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                />
+
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Email Interface</label>
+                <div className="relative">
+                  <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
+                  <input
+                    type="email"
+                    placeholder="nexus@hellopay.io"
+                    className="w-full bg-[#020617]/50 border border-white/5 rounded-[24px] py-5 pl-14 pr-6 outline-none focus:border-blue-500/40 transition-all font-bold text-white placeholder:text-slate-700"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </div>
               </div>
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-500 uppercase tracking-widest">Email Address</label>
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
-              <input
-                type="email"
-                placeholder="john@example.com"
-                className="w-full bg-slate-950 border border-slate-800 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-indigo-500/50 transition-all font-bold text-white placeholder:text-slate-700 shadow-inner"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-500 uppercase tracking-widest">Master Password</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
-                <input
-                  type="password"
-                  placeholder="••••••••••••"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-indigo-500/50 transition-all font-bold text-white placeholder:text-slate-700 shadow-inner"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Security PIN</label>
+                  <div className="relative">
+                    <Fingerprint className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
+                    <input
+                      required
+                      type="text"
+                      maxLength={4}
+                      placeholder="0000"
+                      className="w-full bg-[#020617]/50 border border-white/5 rounded-[24px] py-5 pl-14 pr-6 outline-none focus:border-blue-500/40 transition-all font-bold text-white placeholder:text-slate-700 tracking-[0.5em]"
+                      value={formData.pincode}
+                      onChange={(e) => setFormData({ ...formData, pincode: e.target.value.replace(/\D/g, '') })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1">Referral Node</label>
+                  <div className="relative">
+                    <ArrowRight className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
+                    <input
+                      type="text"
+                      placeholder="Optional ID"
+                      className="w-full bg-[#020617]/50 border border-white/5 rounded-[24px] py-5 pl-14 pr-6 outline-none focus:border-blue-500/40 transition-all font-bold text-white placeholder:text-slate-700"
+                      value={formData.referral}
+                      onChange={(e) => setFormData({ ...formData, referral: e.target.value })}
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-500 uppercase tracking-widest">Security PIN</label>
-              <div className="relative">
-                <Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
-                <input
-                  type="text"
-                  maxLength={4}
-                  placeholder="0000"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-indigo-500/50 transition-all font-bold text-white placeholder:text-slate-700 shadow-inner tracking-[0.5em]"
-                  value={formData.pincode}
-                  onChange={(e) => setFormData({ ...formData, pincode: e.target.value.replace(/\D/g, '') })}
-                />
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-blue-600 py-6 rounded-[28px] text-lg font-black tracking-tight flex items-center justify-center gap-3 transition-all hover:bg-blue-500 hover:shadow-[0_20px_40px_rgba(37,99,235,0.3)] disabled:opacity-50"
+              >
+                {loading ? 'Initializing...' : 'Initialize Link'} <Zap size={22} className="fill-white" />
+              </button>
+            </motion.form>
+          ) : (
+            <motion.form
+              key="step2"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              onSubmit={handleVerifyOtp}
+              className="space-y-8"
+            >
+              <div className="space-y-4">
+                <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1 text-center block">Neural Link Verification PIN</label>
+                <div className="relative">
+                   <ShieldCheck className="absolute left-6 top-1/2 -translate-y-1/2 text-blue-500" size={24} />
+                   <input
+                    required
+                    autoFocus
+                    type="text"
+                    maxLength={4}
+                    placeholder="· · · ·"
+                    className="w-full bg-blue-600/5 border border-blue-500/30 rounded-[32px] py-8 pl-18 pr-8 outline-none focus:border-blue-500 transition-all font-black text-4xl text-center text-white placeholder:text-slate-800 tracking-[0.8em]"
+                    value={formData.otp}
+                    onChange={(e) => setFormData({ ...formData, otp: e.target.value.replace(/\D/g, '') })}
+                  />
+                </div>
+                <p className="text-center text-xs text-slate-600 font-bold">Code sent to: {formData.phone}</p>
               </div>
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-500 uppercase tracking-widest">Referral Code</label>
-            <div className="relative">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
-              <input
-                type="text"
-                placeholder="Optional Referral ID"
-                value={formData.referral}
-                onChange={(e) => setFormData({ ...formData, referral: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-800 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-indigo-500/50 transition-all font-bold text-white placeholder:text-slate-700 shadow-inner"
-              />
-            </div>
-          </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-blue-600 py-6 rounded-[28px] text-lg font-black tracking-tight flex items-center justify-center gap-3 transition-all hover:bg-blue-500 hover:shadow-[0_20px_40px_rgba(37,99,235,0.3)] disabled:opacity-50"
+              >
+                {loading ? 'Synchronizing...' : 'Establish Connection'} <Zap size={22} className="fill-white" />
+              </button>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full btn-primary py-5 rounded-[22px] text-lg font-black tracking-tight flex items-center justify-center gap-3 transition-all hover:shadow-indigo-500/40 disabled:opacity-50"
-          >
-            {loading ? 'Processing...' : 'Create Account'} <ArrowRight size={22} strokeWidth={3} />
-          </button>
-        </form>
+              <button 
+                type="button"
+                onClick={() => setStep(1)}
+                className="w-full text-slate-500 text-sm font-bold hover:text-white transition-colors"
+              >
+                Wrong Phone Number? Back to Link
+              </button>
+            </motion.form>
+          )}
+        </AnimatePresence>
 
-        <p className="mt-8 text-center text-slate-500 text-[13px] font-bold">
-          Already have an account?{' '}
-          <Link href="/login" className="text-indigo-400 hover:text-indigo-300 font-black transition-colors underline decoration-2 underline-offset-4 uppercase tracking-tighter">Sign In</Link>
+        <p className="mt-10 text-center text-slate-500 text-[13px] font-bold">
+          Already verified?{' '}
+          <Link href="/login" className="text-blue-400 hover:text-blue-300 font-black transition-colors underline decoration-2 underline-offset-4 uppercase tracking-tighter">Sign In</Link>
         </p>
       </motion.div>
     </div>
